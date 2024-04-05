@@ -1,0 +1,78 @@
+# Benjamin Y.
+# CSCI 304 ('24 01)
+# April Fools, 2024
+# Section 1 (TR 2-3.5)
+# Synopsis: Assignment 7, Summing 5i - 2!
+
+
+# variable usage
+# Y86                           C code
+# %ecx = sum                    sum/val
+# %edx = temporary values       N/A
+# %ebx = n                      n
+# %esp = array arr              N/A
+# %esi = for loop var           ~i and ~j (combined)
+# %edi = while loop var         ~k
+
+
+# Hard-coded value for n
+.pos 0x0                    # v.mem start at 0
+        irmovl $10, %ebx    # n = 10            << **Hard-codable line**
+        irmovl $1, %edx     # constant = 1
+        addl %edx, %ebx     # n++ so when iter starts, we use n
+
+
+# "Functions"
+
+# Main (implements summation for all n in {0, 1, ..., n-1, n} )
+Main:   irmovl $1, %edx     # constant = 1
+        subl %edx, %ebx     # n--
+        jge Iter            # iterates whole summation for n
+        halt                # done!
+        
+
+# Iter (ating from 0 --> n and accumulates value for whole summation)
+Iter:   irmovl $0, %ecx     # sum = 0
+        irmovl $-1, %edi    # k = -1, so Single loop starts on k
+        irmovl $30, %esi    # For loop runs 25/5 times
+        irmovl arr, %esp    # arr base
+        # jmp Single (implied)
+        
+        
+# single (sum for a single value of n... stores \sum_{i=0}^{n} 5n + 2)
+Single: irmovl $4, %edx     # temp = 4
+        addl %edx, %esp     # arr base + offset
+        
+        irmovl $1, %edx     # constant = 1
+        addl %edx, %edi     # k++
+        
+        irmovl $0, %edx     # c = 0
+        addl %ebx, %edx     # c = n
+        subl %edi, %edx     # c = n - k ( >= 0?)
+        jge Sum             # summation(k)! if k >= 0
+
+        rmmovl %ecx, (%esp) # arr[i] = sum
+        jmp Main            # completed summation(n), return to Main
+
+
+# Five (5i)
+Five:   addl %edi, %ecx     # sum += k
+        # jmp Sum (implied)
+        
+        
+# sum (mation of 5i - 2) for the given value of k
+Sum:
+        irmovl $5, %edx     # constant = 5
+        subl %edx, %esi     # when For runs 5 times
+        jg Five             # 5i
+        irmovl $-2, %edx    # constant = -2
+        addl %edx, %ecx     # sum += -2
+        
+        irmovl $30, %esi    # Five loop gets 5 runs, 30 needed after 1 call
+        irmovl $1, %edx     # constant = -1
+        
+        jmp Single          # returns 5k - 2
+
+# Array Zone
+.pos 0x100                  # manually set v.mem loc in lieu of align
+arr:                        # dictates the start of an array
